@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=netifd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/netifd.git
-PKG_SOURCE_DATE:=2020-10-08
-PKG_SOURCE_VERSION:=64ff909328c095749ef6eaed7302b3e024409d2f
-PKG_MIRROR_HASH:=2419944c2e715f1ffaad601ce2a80a6cff279de3912de8262c27183d9c758345
+PKG_SOURCE_DATE:=2021-01-09
+PKG_SOURCE_VERSION:=c00c8335d6188daa326ecfe5a62da15a9b9987e1
+PKG_MIRROR_HASH:=c740e51e0cec13eec336ba1c7a643db3b64a9a2235f8c1b73a566cb89e841190
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_LICENSE:=GPL-2.0
@@ -23,6 +23,10 @@ define Package/netifd
   CATEGORY:=Base system
   DEPENDS:=+libuci +libnl-tiny +libubus +ubus +ubusd +jshn +libubox
   TITLE:=OpenWrt Network Interface Configuration Daemon
+endef
+
+define Package/netifd/conffiles
+/etc/udhcpc.user
 endef
 
 TARGET_CFLAGS += \

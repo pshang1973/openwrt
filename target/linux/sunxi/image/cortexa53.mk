@@ -1,10 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2013-2016 OpenWrt.org
 # Copyright (C) 2016 Yousong Zhou
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/sun50i
   SUNXI_DTS_DIR := allwinner/
@@ -37,6 +34,15 @@ define Device/friendlyarm_nanopi-neo2
   $(Device/sun50i-h5)
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo2
+
+define Device/libretech_all-h3-cc-h5
+  DEVICE_VENDOR := Libre Computer
+  DEVICE_MODEL := ALL-H3-CC
+  DEVICE_VARIANT := H5
+  $(Device/sun50i-h5)
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-libretech-all-h3-cc
+endef
+TARGET_DEVICES += libretech_all-h3-cc-h5
 
 define Device/olimex_a64-olinuxino
   DEVICE_VENDOR := Olimex

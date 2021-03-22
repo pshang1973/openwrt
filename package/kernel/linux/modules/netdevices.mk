@@ -138,6 +138,23 @@ endef
 $(eval $(call KernelPackage,mii))
 
 
+define KernelPackage/mdio-devres
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Supports MDIO device registration
+  DEPENDS:=@LINUX_5_10 +kmod-libphy PACKAGE_kmod-of-mdio:kmod-of-mdio
+  KCONFIG:=CONFIG_MDIO_DEVRES
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/phy/mdio_devres.ko
+  AUTOLOAD:=$(call AutoProbe,mdio-devres)
+endef
+
+define KernelPackage/mdio-devres/description
+ Supports MDIO device registration
+endef
+
+$(eval $(call KernelPackage,mdio-devres))
+
+
 define KernelPackage/mdio-gpio
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:= Supports GPIO lib-based MDIO busses
@@ -146,8 +163,10 @@ define KernelPackage/mdio-gpio
 	CONFIG_MDIO_BITBANG \
 	CONFIG_MDIO_GPIO
   FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/mdio-gpio.ko \
-	$(LINUX_DIR)/drivers/net/phy/mdio-bitbang.ko
+	$(LINUX_DIR)/drivers/net/phy/mdio-gpio.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/phy/mdio-bitbang.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-gpio.ko@ge5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-bitbang.ko@ge5.10
   AUTOLOAD:=$(call AutoProbe,mdio-gpio)
 endef
 
@@ -286,20 +305,6 @@ endef
 
 $(eval $(call KernelPackage,switch-bcm53xx-mdio))
 
-define KernelPackage/switch-mvsw61xx
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Marvell 88E61xx switch support
-  DEPENDS:=+kmod-swconfig
-  KCONFIG:=CONFIG_MVSW61XX_PHY
-  FILES:=$(LINUX_DIR)/drivers/net/phy/mvsw61xx.ko
-  AUTOLOAD:=$(call AutoLoad,42,mvsw61xx)
-endef
-
-define KernelPackage/switch-mvsw61xx/description
- Marvell 88E61xx switch support
-endef
-
-$(eval $(call KernelPackage,switch-mvsw61xx))
 
 define KernelPackage/switch-ip17xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -557,8 +562,9 @@ $(eval $(call KernelPackage,8139cp))
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek
-  KCONFIG:=CONFIG_R8169 \
+  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek +LINUX_5_10:kmod-mdio-devres
+  KCONFIG:= \
+    CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
     CONFIG_R8169_VLAN=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko
@@ -682,7 +688,7 @@ $(eval $(call KernelPackage,igbvf))
 define KernelPackage/ixgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +!LINUX_4_19:kmod-libphy
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +LINUX_5_10:kmod-mdio-devres
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \
@@ -720,7 +726,7 @@ $(eval $(call KernelPackage,ixgbevf))
 define KernelPackage/i40e
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller XL710 Family support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +!LINUX_4_19:kmod-libphy
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy
   KCONFIG:=CONFIG_I40E \
     CONFIG_I40E_VXLAN=n \
     CONFIG_I40E_HWMON=y \
@@ -744,8 +750,7 @@ define KernelPackage/iavf
        CONFIG_I40EVF \
        CONFIG_IAVF
   FILES:= \
-       $(LINUX_DIR)/drivers/net/ethernet/intel/i40evf/i40evf.ko@lt4.20 \
-       $(LINUX_DIR)/drivers/net/ethernet/intel/iavf/iavf.ko@ge4.20
+       $(LINUX_DIR)/drivers/net/ethernet/intel/iavf/iavf.ko
   AUTOLOAD:=$(call AutoProbe,i40evf iavf)
   AUTOLOAD:=$(call AutoProbe,iavf)
 endef
@@ -862,36 +867,6 @@ define KernelPackage/hfcmulti/description
 endef
 
 $(eval $(call KernelPackage,hfcmulti))
-
-
-define KernelPackage/gigaset
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Siemens Gigaset support for isdn4linux
-  DEPENDS:=@USB_SUPPORT +kmod-isdn4linux +kmod-lib-crc-ccitt +kmod-usb-core @LINUX_4_19
-  URL:=http://gigaset307x.sourceforge.net/
-  KCONFIG:= \
-    CONFIG_ISDN_DRV_GIGASET \
-    CONFIG_GIGASET_BASE \
-    CONFIG_GIGASET_M101 \
-    CONFIG_GIGASET_M105 \
-    CONFIG_GIGASET_UNDOCREQ=y \
-    CONFIG_GIGASET_I4L=y
-  FILES:= \
-    $(LINUX_DIR)/drivers/isdn/gigaset/gigaset.ko \
-    $(LINUX_DIR)/drivers/isdn/gigaset/bas_gigaset.ko \
-    $(LINUX_DIR)/drivers/isdn/gigaset/ser_gigaset.ko \
-    $(LINUX_DIR)/drivers/isdn/gigaset/usb_gigaset.ko
-  AUTOLOAD:=$(call AutoProbe,gigaset bas_gigaset ser_gigaset usb_gigaset)
-endef
-
-define KernelPackage/gigaset/description
- This driver supports the Siemens Gigaset SX205/255 family of
- ISDN DECT bases, including the predecessors Gigaset 3070/3075
- and 4170/4175 and their T-Com versions Sinus 45isdn and Sinus
- 721X.
-endef
-
-$(eval $(call KernelPackage,gigaset))
 
 
 define KernelPackage/macvlan
@@ -1035,7 +1010,8 @@ define KernelPackage/of-mdio
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
 	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko \
-	$(LINUX_DIR)/drivers/of/of_mdio.ko
+	$(LINUX_DIR)/drivers/of/of_mdio.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko@ge5.10
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)
 endef
 
@@ -1210,7 +1186,8 @@ define KernelPackage/sfp
 	CONFIG_MDIO_I2C
   FILES:= \
 	$(LINUX_DIR)/drivers/net/phy/sfp.ko \
-	$(LINUX_DIR)/drivers/net/phy/mdio-i2c.ko
+	$(LINUX_DIR)/drivers/net/phy/mdio-i2c.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-i2c.ko@ge5.10
   AUTOLOAD:=$(call AutoProbe,mdio-i2c sfp)
 endef
 
@@ -1223,7 +1200,7 @@ $(eval $(call KernelPackage,sfp))
 define KernelPackage/igc
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller I225 Series support
-  DEPENDS:=@PCI_SUPPORT @!LINUX_4_19
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp
   KCONFIG:=CONFIG_IGC
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igc/igc.ko
   AUTOLOAD:=$(call AutoProbe,igc)
@@ -1234,3 +1211,41 @@ define KernelPackage/igc/description
 endef
 
 $(eval $(call KernelPackage,igc))
+
+define KernelPackage/sfc
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Solarflare SFC9000/SFC9100/EF100-family support
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-ptp +kmod-hwmon-core
+  KCONFIG:= \
+	CONFIG_SFC \
+	CONFIG_SFC_MTD=y \
+	CONFIG_SFC_MCDI_MON=y \
+	CONFIG_SFC_MCDI_LOGGING=y \
+	CONFIG_SFC_SRIOV=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/sfc/sfc.ko
+  AUTOLOAD:=$(call AutoProbe,sfc)
+endef
+
+define KernelPackage/sfc/description
+  Solarflare SFC9000/SFC9100/EF100-family support
+  Solarflare EF100 support requires at least kernel version 5.9
+endef
+
+$(eval $(call KernelPackage,sfc))
+
+define KernelPackage/sfc-falcon
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Solarflare SFC4000 support
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-i2c-algo-bit
+  KCONFIG:= \
+	CONFIG_SFC_FALCON \
+	CONFIG_SFC_FALCON_MTD=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/sfc/falcon/sfc-falcon.ko
+  AUTOLOAD:=$(call AutoProbe,sfc-falcon)
+endef
+
+define KernelPackage/sfc-falcon/description
+  Solarflare SFC4000 support
+endef
+
+$(eval $(call KernelPackage,sfc-falcon))
